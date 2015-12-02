@@ -29,9 +29,15 @@ my $base_folder = $1 || "./";
 
 $base_folder =~ s/\\/\//g;
 my $FS_CLI = $IS_WINDOWS ? $base_folder . "fs_cli.exe" : $base_folder . "fs_cli";
-$FS_CLI = $IS_WINDOWS ? "fs_cli.exe" : "./fs_cli" if (! -e $FS_CLI);
-my $FS_CLI = $IS_WINDOWS ? $base_folder . "bin\\fs_cli.exe" : $base_folder . "bin/fs_cli"; if (! -e $FS_CLI);
-$FS_CLI =  $IS_WINDOWS ? "c:/program files/Freeswitch/fs_cli.exe" : "/usr/local/freeswitch/bin/fs_cli" if (! -e $FS_CLI);
+if (! -e $FS_CLI){
+	$FS_CLI = $IS_WINDOWS ? "fs_cli.exe" : "./fs_cli";
+	if (! -e $FS_CLI){
+		$FS_CLI = $IS_WINDOWS ? $base_folder . "bin//fs_cli.exe" : $base_folder . "bin/fs_cli";
+		if (! -e $FS_CLI){
+			$FS_CLI =  $IS_WINDOWS ? "c:/program files/Freeswitch/fs_cli.exe" : "/usr/local/freeswitch/bin/fs_cli";
+		}
+	}
+}
 die "Unable to find fs_cli in the fs_logger.pl directory($base_folder), the current directory or in default location of: $FS_CLI" if (! -e $FS_CLI);
 my @CMD = qw/-b/;
 my (@EXEC_ON_CONNECT,@EXEC_ON_QUIT);
