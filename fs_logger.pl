@@ -506,6 +506,7 @@ sub puke($$){
 	my $MD5AUTH_REGEX = qr/MD5\([^:]+:[^:]+:([^:]+)\)\s*=\s*([a-z0-9]+)/i;  #capture both the unencrypted password and the resulting hash
 	my $MD5_REGEX = qr/(?<![a-z0-9])([a-z0-9]{32,32})(?![a-z0-9])/i; #32 char letter and number only strings
 	my $MD5_RESP = qr/response="$MD5_REGEX"/;
+	my $CRYPTO_OFFER = qr/a=crypto:[^\n]+inline:([^ \n]+)/;
 	my %OB_TO_REPLACE;
 
 	sub ob_rand_str($){
@@ -592,6 +593,7 @@ sub puke($$){
 			ob_handle_found($output_buffer =~ m|$IP_REGEX|g);
 			ob_handle_found($output_buffer =~ m|$DOM_REGEX|g);
 			ob_handle_found($output_buffer =~ m|$NONCE_REGEX|g);
+			ob_handle_found($output_buffer =~ m|$CRYPTO_OFFER|g);
 			ob_handle_found($output_buffer =~ m|$MD5AUTH_REGEX|g);
 			ob_handle_found($output_buffer =~ m|$MD5_RESP|g);
 		}
