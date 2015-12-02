@@ -14,6 +14,7 @@ BEGIN {
 	}
 }
 require IO::Socket::INET;
+require IO::Socket::SSL;
 use IO::Socket;
 use Time::HiRes qw( sleep );
 use POSIX ":sys_wait_h";
@@ -251,14 +252,14 @@ sub pastebin_post($$){
 	my $type = $PASTEBIN_TYPES{lc($file_ext)};
 	$type = "fslog" if (! $type);
 
-	my $pb_post = qq~POST http://pastebin.freeswitch.com/pastebin.php HTTP/1.1
+	my $pb_post = qq~POST https://pastebin.freeswitch.org/pastebin.php HTTP/1.1
 	Accept: text/html, application/xhtml+xml, */*
-	Referer: http://pastebin.freeswitch.com/
+	Referer: https://pastebin.freeswitch.org/
 	Accept-Language: en-US
 	User-Agent: FSLogger
 	Content-Type: application/x-www-form-urlencoded
 	Accept-Encoding: gzip, deflate
-	Host: pastebin.freeswitch.com
+	Host: pastebin.freeswitch.org
 	Content-Length: CONT_LEN
 	Pragma: no-cache
 	Authorization: Basic cGFzdGViaW46ZnJlZXN3aXRjaA==
@@ -270,7 +271,7 @@ sub pastebin_post($$){
 	my $post_len = length($post_body);
 	$pb_post =~ s/CONT_LEN/$post_len/;
 	$pb_post .= $post_body;
-	my $sock = new IO::Socket::INET ( PeerAddr => 'pastebin.freeswitch.com', PeerPort => '80', Proto => 'tcp', );
+	my $sock = IO::Socket::SSL->new('pastebin.freeswitch.org:443' ) or die "pastebin connect error=$!";
 	print $sock $pb_post;
 	my $url="";
 	while (my $line = <$sock>){
@@ -279,6 +280,7 @@ sub pastebin_post($$){
 		($url = $1) && last if ($line =~ /^Location: (.+)/);
 		last if ($line eq "");
 	}
+	$url =~ s/http:/https:/;
 	close $sock;
 	return $url;
 }
