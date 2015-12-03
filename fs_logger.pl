@@ -72,7 +72,7 @@ sub usage(){
    -ia --input-accept             Pass input to the freeswitch console
    -D, --fslogger-debug           FSLogger debug mode
    -jrf --just-read-file=<file>	  Read file instead of collecting log from fs_cli
-   -pbt --pastebin-time=<time>    Pastebin for day(d) month(m) forever(default)
+   -pbt --pastebin-time=<time>    Pastebin for month(m) forever(default)
 
       The -st, -X, -x options can be used multiple times
       fs_logger.pl will run until fs_cli ends or control+c
@@ -461,7 +461,7 @@ sub puke($$){
 			$JUST_READ_FILE=$value and next if ($matches);
 			($matches,$value) = arg_test("-pbt","--pastebin-time",1,1);
 			$PASTEBIN_TIME=lc($value) if ($matches);
-			$PASTEBIN_TIME = "d" if ($PASTEBIN_TIME eq "day");
+			#$PASTEBIN_TIME = "d" if ($PASTEBIN_TIME eq "day");
 			$PASTEBIN_TIME = "m" if ($PASTEBIN_TIME eq "month");
 			$PASTEBIN_TIME = "f" if ($PASTEBIN_TIME eq "forever" || $PASTEBIN_TIME eq "default" || $PASTEBIN_TIME eq "");
 			die "pastebin-time must be set to one of: d/m/f" if ($PASTEBIN_TIME ne "d" && $PASTEBIN_TIME ne "m" && $PASTEBIN_TIME ne "f");
