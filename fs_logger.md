@@ -81,7 +81,7 @@ The -ia and -do options allow fs_logger.pl to behave more like you were interact
 
 ### Pastebin / Output File (-pb -f -pbt -pbn -pbp)
 
-One of these options must be specified. -f will just save the captured output to the filename specified. -pb will post the captured output up to pastebin, you can option pass a username (-pb user) to post to pastebin as. -pbt allows you to specify how long the pastebin will remain in minutes, by default its forever you can pass -pbt d for day or -pbt m for month also.  -pbn allows specifying of the title for the pastebin and -pbp marks the pastebin as private (not on the recent list).
+One of these options must be specified. -f will just save the captured output to the filename specified. -pb will post the captured output up to pastebin, you can option pass a username (-pb user) to post to pastebin as. -pbt allows you to specify how long the pastebin will remain in minutes, by default its forever you can pass -pbt d for day or -pbt m for month also and -pbt b to expire after first read.  -pbn allows specifying of the title for the pastebin and -pbp marks the pastebin as private (not on the recent list).
 
 ### fs_logger.pl Debug Mode (-D)
 
