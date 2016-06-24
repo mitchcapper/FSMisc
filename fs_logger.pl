@@ -72,7 +72,7 @@ sub usage(){
    -ia --input-accept             Pass input to the freeswitch console
    -D, --fslogger-debug           FSLogger debug mode
    -jrf --just-read-file=<file>	  Read file instead of collecting log from fs_cli
-   -pbt --pastebin-time=<time>    Minutes until it expires, forever(default)
+   -pbt --pastebin-time=<time>    Auto expire post after this many minutes or abbreviation (d=day, m=month)
    -pbn --pastebin-name=<title>   Title for the pastebin
    -pbp --pastebin-private        Make the pastebin private
 
