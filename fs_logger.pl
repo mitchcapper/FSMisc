@@ -72,7 +72,7 @@ sub usage(){
    -ia --input-accept             Pass input to the freeswitch console
    -D, --fslogger-debug           FSLogger debug mode
    -jrf --just-read-file=<file>	  Read file instead of collecting log from fs_cli
-   -pbt --pastebin-time=<time>    Auto expire post after this many minutes or abbreviation (d=day, m=month)
+   -pbt --pastebin-time=<time>    Auto expire post after this many minutes or abbreviation (d=day, m=month, b=burn on read)
    -pbn --pastebin-name=<title>   Title for the pastebin
    -pbp --pastebin-private        Make the pastebin private
 
@@ -466,10 +466,11 @@ sub puke($$){
 			($matches,$value) = arg_test("-pbt","--pastebin-time",1,1);
 			$PASTEBIN_TIME=lc($value) if ($matches);
 			#Old value support:
-			$PASTEBIN_TIME = 60 * 24 if ($PASTEBIN_TIME eq "d");
-			$PASTEBIN_TIME = 60 * 24 *30 if ($PASTEBIN_TIME eq "m");
+			$PASTEBIN_TIME = 60 * 24 if ($PASTEBIN_TIME eq "d" || $PASTEBIN_TIME eq "day");
+			$PASTEBIN_TIME = 60 * 24 *30 if ($PASTEBIN_TIME eq "m" || $PASTEBIN_TIME eq "month");
+			$PASTEBIN_TIME = "burn" if ($PASTEBIN_TIME eq "b");
 			$PASTEBIN_TIME = "" if ($PASTEBIN_TIME eq "f");
-			die "pastebin-time must be set to an integer" if ($PASTEBIN_TIME =~ /[^0-9]/s);
+			die "pastebin-time must be set to an integer" if ($PASTEBIN_TIME =~ /[^0-9]/s && $PASTEBIN_TIME ne "burn");
 			next if ($matches);
 			
 
