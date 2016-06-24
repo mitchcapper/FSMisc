@@ -22,7 +22,7 @@ my ($pid,$output_buffer,$in_cleanup,$proc_stdin);
 my @AUTOS = qw/-pb -do -st internal -l 7/;
 push @AUTOS, "-ia" if (! $IS_WINDOWS || $THREADS_SUPPORTED);
 
-my ($DISPLAY_OUTPUT,$ACCEPT_INPUT,$PASTEBIN_USER,$FILE,$OB_AUTO,$OB_FILE,@SIP_TRACE_ON,$SOFIA_LOG_LEVEL,$CLEANUP_COMMANDS,$DEBUG_MODE,$JUST_READ_FILE,$PASTEBIN_TIME);
+my ($DISPLAY_OUTPUT,$ACCEPT_INPUT,$PASTEBIN_USER,$FILE,$OB_AUTO,$OB_FILE,@SIP_TRACE_ON,$SOFIA_LOG_LEVEL,$CLEANUP_COMMANDS,$DEBUG_MODE,$JUST_READ_FILE,$PASTEBIN_TIME,$PASTEBIN_TITLE,$PASTEBIN_PRIVATE);
 
 $SIG{INT} = \&cleanup;
 $0=~/^(.+[\\\/])[^\\\/]+[\\\/]*$/;
@@ -58,7 +58,7 @@ sub usage(){
    -X, --quit-execute=command     Execute Command when quitting
    -l, --loglevel=command         Log Level
    -d, --debug=level              fs_cli Debug Level (0 - 7)
-   -t, --timeout                  Timeout for API commands (in miliseconds)
+   -t, --timeout                  Timeout for API commands (in milliseconds)
    -q, --quiet                    Disable logging
    -r, --retry                    Retry connection on failure
    -R, --reconnect                Reconnect if disconnected
@@ -72,7 +72,9 @@ sub usage(){
    -ia --input-accept             Pass input to the freeswitch console
    -D, --fslogger-debug           FSLogger debug mode
    -jrf --just-read-file=<file>	  Read file instead of collecting log from fs_cli
-   -pbt --pastebin-time=<time>    Pastebin for month(m) forever(default)
+   -pbt --pastebin-time=<time>    Minutes until it expires, forever(default)
+   -pbn --pastebin-name=<title>   Title for the pastebin
+   -pbp --pastebin-private        Make the pastebin private
 
       The -st, -X, -x options can be used multiple times
       fs_logger.pl will run until fs_cli ends or control+c
@@ -250,24 +252,22 @@ sub pastebin_post($$){
 	$file_ext = $1 if ($JUST_READ_FILE =~ /.\.([A-Za-z0-9]{1,4})$/);
 	my %PASTEBIN_TYPES = ("sh"=>"bash","c"=>"c","cpp"=>"cpp","h"=>"cpp","htm"=>"html4strict","html"=>"html4strict","pl"=>"perl","cgi"=>"perl","py"=>"python","php"=>"php","cs"=>"csharp","lua"=>"lua","xml"=>"xml","fsxml"=>"xml","ini"=>"ini");
 	my $type = $PASTEBIN_TYPES{lc($file_ext)};
-	$type = "fslog" if (! $type);
+	$type = "freeswitch" if (! $type);
 
-	my $pb_post = qq~POST https://pastebin.freeswitch.org/pastebin.php HTTP/1.1
+	my $pb_post = qq~POST https://pastebin.freeswitch.org/api/create HTTP/1.1
 	Accept: text/html, application/xhtml+xml, */*
 	Referer: https://pastebin.freeswitch.org/
 	Accept-Language: en-US
 	User-Agent: FSLogger
 	Content-Type: application/x-www-form-urlencoded
-	Accept-Encoding: gzip, deflate
 	Host: pastebin.freeswitch.org
 	Content-Length: CONT_LEN
 	Pragma: no-cache
-	Authorization: Basic cGFzdGViaW46ZnJlZXN3aXRjaA==
 
 	~;
 	$pb_post =~ s/^\t//mg;
-	my $post_body = "parent_pid=&format=$type&poster=" . $post_as . "&paste=Send&expiry=" . $PASTEBIN_TIME . "&code2=";
-	$post_body .= $to_post;
+	$PASTEBIN_TIME = $PASTEBIN_TIME ? "&expire=" . $PASTEBIN_TIME : "";
+	my $post_body = "format=$type&name=" . $post_as . $PASTEBIN_TIME  . "&title=" . $PASTEBIN_TITLE  . "&private=" . $PASTEBIN_PRIVATE . "&text=" . $to_post;
 	my $post_len = length($post_body);
 	$pb_post =~ s/CONT_LEN/$post_len/;
 	$pb_post .= $post_body;
@@ -277,10 +277,8 @@ sub pastebin_post($$){
 	while (my $line = <$sock>){
 		$line =~ s/\r//gs;
 		chomp($line);
-		($url = $1) && last if ($line =~ /^Location: (.+)/);
-		last if ($line eq "");
+		($url = $1) && last if ($line =~ /^(https:\/\/pastebin[^\s]+)/);
 	}
-	$url =~ s/http:/https:/;
 	close $sock;
 	return $url;
 }
@@ -458,13 +456,20 @@ sub puke($$){
 			$OB_FILE=$value and next if ($matches);
 			($matches,$value) = arg_test("-jrf","--just-read-file",1,1);
 			die "File to just read not found: $value" if ($matches && ! -e $value);
-			$JUST_READ_FILE=$value and next if ($matches);
+			$JUST_READ_FILE=$value and next if ($matches);	
+			($matches,$value) = arg_test("-pbp","--pastebin-private",0,0);
+			$PASTEBIN_PRIVATE=1 and next if ($matches);
+
+			($matches,$value) = arg_test("-pbn","--pastebin-name",1,1);
+			$PASTEBIN_TITLE=lc($value) if ($matches);
+			next if ($matches);
 			($matches,$value) = arg_test("-pbt","--pastebin-time",1,1);
 			$PASTEBIN_TIME=lc($value) if ($matches);
-			#$PASTEBIN_TIME = "d" if ($PASTEBIN_TIME eq "day");
-			$PASTEBIN_TIME = "m" if ($PASTEBIN_TIME eq "month");
-			$PASTEBIN_TIME = "f" if ($PASTEBIN_TIME eq "forever" || $PASTEBIN_TIME eq "default" || $PASTEBIN_TIME eq "");
-			die "pastebin-time must be set to one of: d/m/f" if ($PASTEBIN_TIME ne "d" && $PASTEBIN_TIME ne "m" && $PASTEBIN_TIME ne "f");
+			#Old value support:
+			$PASTEBIN_TIME = 60 * 24 if ($PASTEBIN_TIME eq "d");
+			$PASTEBIN_TIME = 60 * 24 *30 if ($PASTEBIN_TIME eq "m");
+			$PASTEBIN_TIME = "" if ($PASTEBIN_TIME eq "f");
+			die "pastebin-time must be set to an integer" if ($PASTEBIN_TIME =~ /[^0-9]/s);
 			next if ($matches);
 			
 
